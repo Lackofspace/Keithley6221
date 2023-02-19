@@ -3,12 +3,16 @@ import pyvisa
 import random as random
 import time
 
+fileCreationCounter = 0
+
 
 class Keythley6221(object):
-    """Класс прибора Keithley 6221 для работы с прибором."""
+    """Класс прибора Keithley 6221 для работы с ним."""
+
     def __init__(self) -> None:
         self.rm = pyvisa.ResourceManager()
         self.connection = False
+        self.delay = None
         self.start = 0
         self.stop = 0
         self.step = 0
@@ -33,123 +37,99 @@ class Keythley6221(object):
     def reset(self) -> None:
         """Восстановление настроек по умолчанию."""
         self.connection.write('*RST')
-        print(f'Настройки восстановлены по умолчанию.')
+        print(f'Настройки восстановлены по умолчанию!')
 
     def setLinearStaircase(self) -> None:
-        """
-        Выбор вида развертки:
-
-            [STAIR] -- Указать START, STOP, STEP, DELAY
-            (начало, конец, шаг, задержка)
-
-            [LOG] -- Указать START, STOP, NO OF POINTS, DELAY
-            (начало, конец, число точек, задержка)
-
-            [CUSTOM] -- Указать #-POINTS, ADJUST POINTS, AUTO COPY*
-            (число точек, ввод точек, авто-копирование)
-        """
-
-        linearStaircase = input('Установите линейно-ступенчатую развёртку: ')
-        self.connection.write(f'SOUR:SWE:SPAC ' + linearStaircase)
+        """Установка линейной развёртки."""
+        self.connection.write(f'SOUR:SWE:SPAC LIN')
 
     def setStartCurrent(self) -> None:
         """Установка начального значения тока."""
-        startCurrent = input('Set start current: ')
+        startCurrent = input('Установите начальный ток: ')
         self.connection.write(f'SOUR:CURR:STAR ' + startCurrent)
         self.start = float(startCurrent)
 
     def setStopCurrent(self) -> None:
         """Установка конечного значения тока = максимальная амплитуда тока."""
-        stopCurrent = input('Set stop current: ')
+        stopCurrent = input('Установите конечный ток: ')
         self.connection.write(f'SOUR:CURR:STOP ' + stopCurrent)
         self.stop = float(stopCurrent)
 
     def setStep(self) -> None:
         """Установка шага увеличения амплитуды тока."""
-        step = input('Set step: ')
+        step = input('Установите шаг увеличения тока: ')
         self.connection.write(f'SOUR:CURR:STEP ' + step)
         self.step = float(step)
 
     def calcDataDelay(self) -> int:
         """Подсчёт времени генерации тока перед отключением."""
-        timeDelay = (self.stop - self.start) / self.step
+        timeDelay = ((self.stop - self.start) / self.step) * self.delay
         return round(timeDelay)
 
     def setDelay(self) -> None:
         """Установка ожидания между импульсами."""
-        delay = input('Set delay: ')
+        delay = input('Установите задержку импульсов: ')
         self.connection.write(f'SOUR:DEL ' + delay)
+        self.delay = float(delay)
 
     def setSpan(self) -> None:
         """
         Установка диапазона источника.
 
-        Выбор диапазона источника:
-            [BEST] -- Использовать наилучший диапазон для максимального шага развертки
-            [AUTO] -- Индивидуально автоматически устанавливать диапазон для каждого шага
-            [FIXED] -- Оставаться в заданном диапазоне
+        [BEST] -- Использовать наилучший диапазон для максимального шага развертки
         """
-        span = input('Set range: ')
-        self.connection.write(f'SOUR:PDEL:RANG ' + span)
+        self.connection.write(f'SOUR:PDEL:RANG BEST')
 
     def setCurrentCompliance(self) -> None:
         """Ограничение выходного напряжения."""
-        currentCompliance = input('Set curr comp: ')
+        currentCompliance = input('Установите предел напряжения: ')
         self.connection.write(f'SOUR:CURR:COMP ' + currentCompliance)
 
     def setTriaxOutputLow(self) -> None:
-        """Установка вывода в землю."""
-        triaxOutputLow = input('Set triax out: ')
+        """Установка вывода в землю.
+
+            [ON] -- Включить вывод
+            [OFF] -- Выключить вывод
+            """
+        triaxOutputLow = input('Вывод в землю: ')
         self.connection.write(f'OUTP:LTE ' + triaxOutputLow)
 
     def setLowSignal(self) -> None:
         """Установка низкого уровня сигнала."""
-        lowSignal = input('Set low sig: ')
-        self.connection.write(f'SOUR:PDEL:LOW ' + lowSignal)
+        self.connection.write(f'SOUR:PDEL:LOW 0')
 
     def setHighSignal(self) -> None:
         """Установка высокого уровня сигнала (не обязательно)."""
-        highSignal = input('Set high sig: ')
+        highSignal = input('Установите высокий уровень сигнала: ')
         self.connection.write(f'SOUR:PDEL:HIGH ' + highSignal)
 
     def setImpulseInterval(self) -> None:
         """Установка интервала импульса."""
-        impulseInterval = input('Set imp int: ')
+        impulseInterval = input('Установите интервал импульса: ')
         self.connection.write(f'SOUR:PDEL:INT ' + impulseInterval)
 
     def setWidth(self) -> None:
         """Установка ширины импульса."""
-        width = input('Set width: ')
+        width = input('Установите ширину импульса: ')
         self.connection.write(f'SOUR:PDEL:WIDT ' + width)
 
     def setSweepMode(self) -> None:
-        """
-        Инициализация функции развертки.
-
-        [ON] -- Включить функцию развертки
-        [OFF] -- Выключить функцию развертки
-        """
-        sweepMode = input('Set sweep mode: ')
-        self.connection.write(f'SOUR:PDEL:SWE ' + sweepMode)
+        """Инициализация функции развёртки."""
+        self.connection.write(f'SOUR:PDEL:SWE ON')
 
     def setDelayOfMode(self) -> None:
-        """Установка времени задержки развертки."""
-        delayOfMode = input('Set delay of mode: ')
+        """Установка времени задержки развёртки."""
+        delayOfMode = input('Установите задержку у режима: ')
         self.connection.write(f'SOUR:PDEL:SDEL ' + delayOfMode)
 
     def setPulseCount(self) -> None:
-        """
-        Установка счётчика = количество точек кривой.
-
-        Задаёт размер буфера
-        """
-        pulseCount = input('Set pulse count: ')
+        """Установка счётчика. Задаёт размер буфера."""
+        pulseCount = input('Установите количество импульсов: ')
         self.connection.write('SOUR:PDEL:COUN ' + pulseCount)
 
     def setBufSize(self) -> None:
         """Установка размера буфера."""
-        bufSize = input('Set buf size: ')
-        self.connection.write('TRAC:POIN ' + bufSize)
+        self.connection.write('TRAC:POIN 5000')
 
     def cleanBuffer(self) -> None:
         """Очистка буфера"""
@@ -162,7 +142,7 @@ class Keythley6221(object):
         [ON] -- Функция включена
         [OFF] -- Функция выключена
         """
-        turnInterruption = input('Set inter: ')
+        turnInterruption = input('Прекращение: ')
         self.connection.write('TRAC:DCON:CAB ' + turnInterruption)
 
     def initialise(self) -> None:
@@ -171,7 +151,12 @@ class Keythley6221(object):
 
     def run(self) -> None:
         """Запуск импульсного дельта-теста."""
+        print('Процесс запущен...')
         self.connection.write('INIT:IMM')
+
+        # Ожидание, пока процесс завершится и чтобы не прерывать его
+        time.sleep(self.calcDataDelay() + 1)
+        print("Процесс завершен!")
 
     def complete(self) -> None:
         """Прекращение импульсного дельта-теста."""
@@ -179,26 +164,24 @@ class Keythley6221(object):
 
     def dataProcessing(self) -> None:
         """Считывание показаний измерений из буфера Keithley6221."""
+        time.sleep(5)
         data = str(self.connection.query('TRAC:DATA?'))
         dataList = data.split(",")[::2]
 
         for number in dataList:
             self.U.append(float(number))
 
-        self.I = [self.start + i * self.step for i in range(self.calcDataDelay())]
+        self.I = [self.start + i * self.step for i in range(len(self.U))]
 
-    def saveToFile(self) -> None:
-        """Сохранение показаний с прибора в файл."""
-        name = input('Введите название файла: ')
-        with open(f'{name}.txt', 'w', encoding="utf-8") as f:
-            f.write("{:^15}{:^35}\n".format("U", "I"))
-            for u, i in zip(self.U, self.I):
-                f.write("{:<25.13f}{:<25.13f}\n".format(u, i))
-            f.close()
+        # Для обработки больших данных нужно больше времени
+        time.sleep(5)
 
     def configureSweep(self) -> None:
         """Установка значений в режиме линейно-ступенчатой развертки."""
         self.setLinearStaircase()
+        self.setStartCurrent()
+        self.setStopCurrent()
+        self.setStep()
         self.setSpan()
         self.setCurrentCompliance()
         self.setDelay()
@@ -213,6 +196,18 @@ class Keythley6221(object):
         self.setPulseCount()
 
 
+def saveToFile(U, I, fileNumber) -> None:
+    """Сохранение показаний с прибора в файл."""
+    name = input('Введите название файла: ')
+    fileNumber += 1
+    with open(f'{name}{fileNumber}.txt', "a", encoding="utf-8") as f:
+        # Левая колонка -- напряжение, правая -- ток.
+        # f.write("{:^15}{:^35}\n".format("U", "I"))
+        for u, i in zip(U, I):
+            f.write("{:<25.13f}{:<25.13f}\n".format(u, i))
+        f.close()
+
+
 def draw(U, I) -> None:
     """
     Построение графика по измеренным данным.
@@ -223,7 +218,6 @@ def draw(U, I) -> None:
         Менять настройки просмотра (например, смещать в сторону)
         Сохранять
         Сбрасывать описанные выше настройки
-
     """
     # Задание случайного цвета графика
     r = random.random()
@@ -232,15 +226,12 @@ def draw(U, I) -> None:
 
     color = (r, g, b)
 
-    plt.title('Volt-ampere characteristic')
-    plt.xlabel('Amperage')
-    plt.ylabel('Voltage')
+    plt.title('Вольт-амперная характеристика')
+    plt.xlabel('Сила тока')
+    plt.ylabel('Напряжение')
     plt.plot(I, U, c=color)
 
 
 def showAllGraphs() -> None:
     """Показывает все графики ВАХ на одной плоскости (для наглядности)."""
     plt.show()
-
-
-# TODO: магнитное поле.
