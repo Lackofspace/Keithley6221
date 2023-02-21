@@ -227,8 +227,8 @@ def draw(U, I) -> None:
     color = (r, g, b)
 
     plt.title('Вольт-амперная характеристика')
-    plt.xlabel('Сила тока')
-    plt.ylabel('Напряжение')
+    plt.xlabel('Сила тока (A)')
+    plt.ylabel('Напряжение (V)')
     plt.plot(I, U, c=color)
 
 
