@@ -65,16 +65,10 @@ def plot_func(U, I):
 U_f, I_f = read('f.txt')
 U_r, I_r = read('r.txt')
 
-df = pd.read_table(r'file17.txt', header=None, sep=r"\s+")
-U_file17 = df[2].tolist()
-U_file17 = [item / 50.4 for item in U_file17]
-I_file17 = df[1].tolist()
-
 plt.title('Вольт-амперная характеристика')
 plt.xlabel('Сила тока (A)')
 plt.ylabel('Напряжение (U)')
 plot_func(U_f, I_f)
 plot_func(U_r, I_r)
-plot_func(U_file17, I_file17)
 
 plt.show()```
